@@ -270,10 +270,6 @@ async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
-
-
-
-        
 async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
@@ -286,8 +282,6 @@ async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
-
-https://github.com/blorak1280-dotcom/betting_bot/blob/main/bot.py
 
 async def slot_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
