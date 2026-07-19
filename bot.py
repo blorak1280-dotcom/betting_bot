@@ -468,7 +468,7 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         win = True
         multiplier = 2.5
     
-     if win:
+    if win:
         win_amount = int(bet * multiplier)
         update_balance(query.from_user.id, win_amount)
         add_transaction(user[0], 'win', win_amount)
