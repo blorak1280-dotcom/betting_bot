@@ -280,6 +280,19 @@ async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
+async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.message.edit_text(
+        "🎰 Choose your bet:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("10", callback_data="slot_bet_10")],
+            [InlineKeyboardButton("20", callback_data="slot_bet_20")],
+            [InlineKeyboardButton("100", callback_data="slot_bet_100")],
+            [InlineKeyboardButton("500", callback_data="slot_bet_500")],
+            [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
+        ])
+    )
+
 async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
@@ -327,11 +340,12 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         add_transaction(user[0], 'loss', -bet)
         text = f"💔 You lost! Result: {result}\n💰 Loss: {bet} coins"
     
-    # شرط ۱۰۰: اولین بار همیشه باخت، بعدش چرخه‌ای (یک برد، سه باخت)
+    # شرط ۱۰۰
     elif bet == 100:
         has_used_100 = user[10] if len(user) > 10 else 0
         losses = user[9] if len(user) > 9 else 0
         
+        # اولین بار ۱۰۰: همیشه باخت
         if has_used_100 == 0:
             result = 'tails' if choice == 'heads' else 'heads'
             update_balance(query.from_user.id, -bet)
@@ -340,6 +354,7 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
             conn.commit()
             text = f"💔 You lost! (First 100 bet)\n💰 Loss: {bet} coins"
         else:
+            # بعد از اولین بار: یک برد، سه باخت
             if losses >= 3:
                 win = bet * 2
                 update_balance(query.from_user.id, win)
@@ -369,6 +384,7 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
             add_transaction(user[0], 'loss', -bet)
             text = f"💔 You lost! Result: {result}\n💰 Loss: {bet} coins"
     
+    # بررسی رفرال برای اولین شرط
     if user[7] == 0:
         cursor.execute('UPDATE users SET has_bet = 1 WHERE telegram_id = ?', (query.from_user.id,))
         conn.commit()
@@ -383,6 +399,7 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(query.from_user.id)
     text += f"\n\n💳 New balance: {user[3]} coins"
     
+    # ارسال گیف
     try:
         if result == 'heads':
             gif_id = "AAMCBAADGQEAAQMKpmpcM7rchYwAAcg-7LL00gIt-seV2AACxiEAAvxc4VK6xbM_Aihe5AEAB20AAz0E"
@@ -396,19 +413,6 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text,
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🪙 Play Again", callback_data="coinflip")],
-            [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
-        ])
-    )
-
-async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.message.edit_text(
-        "🎰 Choose your bet:",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="slot_bet_10")],
-            [InlineKeyboardButton("20", callback_data="slot_bet_20")],
-            [InlineKeyboardButton("100", callback_data="slot_bet_100")],
-            [InlineKeyboardButton("500", callback_data="slot_bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
