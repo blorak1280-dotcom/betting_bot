@@ -92,8 +92,10 @@ def games_menu():
 
 def roulette_keyboard():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔴 Red", callback_data="roulette_red"), InlineKeyboardButton("⚫ Black", callback_data="roulette_black")],
-        [InlineKeyboardButton("🟢 Green", callback_data="roulette_green"), InlineKeyboardButton("🔙 Back", callback_data="main_back")]
+        [InlineKeyboardButton("🔴 Red", callback_data="roulette_red")],
+        [InlineKeyboardButton("⚫ Black", callback_data="roulette_black")],
+        [InlineKeyboardButton("🟢 Green", callback_data="roulette_green")],
+        [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
     ])
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -107,7 +109,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if referrer and referrer[5] < 3:
                 cursor.execute('UPDATE users SET referral_count = referral_count + 1 WHERE telegram_id = ?', (referrer_id,))
                 conn.commit()
-                context.user_data['ref_by'] = referrer_id
     await update.message.reply_text(
         f"💰 Welcome to money poney, {update.effective_user.first_name}!\n\n🎮 Use the menu below to play:",
         reply_markup=main_menu()
@@ -116,7 +117,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def main_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
-        f"💰 Welcome to money poney!\n\n🎮 Use the menu below to play:",
+        "💰 Welcome to money poney!\n\n🎮 Use the menu below to play:",
         reply_markup=main_menu()
     )
 
@@ -210,14 +211,15 @@ async def daily_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="main_back")]])
     )
 
-# ========== Roulette ==========
 async def roulette(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
         "🎡 Choose your bet:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="bet_10"), InlineKeyboardButton("20", callback_data="bet_20")],
-            [InlineKeyboardButton("100", callback_data="bet_100"), InlineKeyboardButton("500", callback_data="bet_500")],
+            [InlineKeyboardButton("10", callback_data="bet_10")],
+            [InlineKeyboardButton("20", callback_data="bet_20")],
+            [InlineKeyboardButton("100", callback_data="bet_100")],
+            [InlineKeyboardButton("500", callback_data="bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
@@ -268,14 +270,15 @@ async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
-# ========== Heads or Tails ==========
 async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
         "🪙 Choose your bet:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="coin_bet_10"), InlineKeyboardButton("20", callback_data="coin_bet_20")],
-            [InlineKeyboardButton("100", callback_data="coin_bet_100"), InlineKeyboardButton("500", callback_data="coin_bet_500")],
+            [InlineKeyboardButton("10", callback_data="coin_bet_10")],
+            [InlineKeyboardButton("20", callback_data="coin_bet_20")],
+            [InlineKeyboardButton("100", callback_data="coin_bet_100")],
+            [InlineKeyboardButton("500", callback_data="coin_bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
@@ -341,7 +344,6 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(query.from_user.id)
     text += f"\n\n💳 New balance: {user[3]} coins"
     
-    # ارسال گیف با try/except برای جلوگیری از کرش
     try:
         if result == 'heads':
             gif_id = "AAMCBAADGQEAAQMKpmpcM7rchYwAAcg-7LL00gIt-seV2AACxiEAAvxc4VK6xbM_Aihe5AEAB20AAz0E"
@@ -359,14 +361,15 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
-# ========== Slots ==========
 async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
         "🎰 Choose your bet:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="slot_bet_10"), InlineKeyboardButton("20", callback_data="slot_bet_20")],
-            [InlineKeyboardButton("100", callback_data="slot_bet_100"), InlineKeyboardButton("500", callback_data="slot_bet_500")],
+            [InlineKeyboardButton("10", callback_data="slot_bet_10")],
+            [InlineKeyboardButton("20", callback_data="slot_bet_20")],
+            [InlineKeyboardButton("100", callback_data="slot_bet_100")],
+            [InlineKeyboardButton("500", callback_data="slot_bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
@@ -404,14 +407,15 @@ async def slot_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
-# ========== Dice ==========
 async def dice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
         "🎲 Choose your bet:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="dice_bet_10"), InlineKeyboardButton("20", callback_data="dice_bet_20")],
-            [InlineKeyboardButton("100", callback_data="dice_bet_100"), InlineKeyboardButton("500", callback_data="dice_bet_500")],
+            [InlineKeyboardButton("10", callback_data="dice_bet_10")],
+            [InlineKeyboardButton("20", callback_data="dice_bet_20")],
+            [InlineKeyboardButton("100", callback_data="dice_bet_100")],
+            [InlineKeyboardButton("500", callback_data="dice_bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
@@ -468,9 +472,8 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         win_amount = int(bet * multiplier)
         update_balance(query.from_user.id, win_amount)
         add_transaction(user[0], 'win', win_amount)
-        text = (
-            f"🎲 Dice: {dice_emoji} {dice_number}\n\n"
-            f"🎉 You won!\n"
-            f"Multiplier: {multiplier}x\n"
-            f"💰 Win: {win_amount} coins"
-        )
+        text = f"🎲 Dice: {dice_emoji} {dice_number}\n\n🎉 You won!\nMultiplier: {multiplier}x\n💰 Win: {win_amount} coins"
+    else:
+        update_balance(query.from_user.id, -bet)
+        add_transaction(user[0], 'loss', -bet)
+        text = f"🎲 Dice: {dice_emoji} {dice_number}\n\n😔 You lost!\nYour choice didn't match the result.\
