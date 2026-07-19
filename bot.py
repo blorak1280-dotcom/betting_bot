@@ -474,7 +474,3 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Multiplier: {multiplier}x\n"
             f"💰 Win: {win_amount} coins"
         )
-    e def update_balance(telegram_id, amount):
-    cursor.execute('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', (amount, telegram_id))
-    conn.commit()
-
