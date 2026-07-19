@@ -534,18 +534,19 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def test_gif(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        # یه گیف نمونه از خود تلگرام
         test_gif_id = "CgACAgQAAxkBAAEDCqZqXDO63IWMAAHIPuyy9NICLfrHldgAAsYhAAL8XOFSusWzPwIoXuQ9BA"
         await update.message.reply_animation(test_gif_id)
-        await update.message.reply_text("✅ گیف با موفقیت ارسال شد!")
+        await update.message.reply_text("✅ GIF sent successfully!")
     except Exception as e:
-        await update.message.reply_text(f"❌ خطا: {e}")
+        await update.message.reply_text(f"❌ Error: {e}")
         
 def main():
-    application.add_handler(CommandHandler("testgif", test_gif))
     application = Application.builder().token(TOKEN).build()
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("addcoin", addcoin))
+    application.add_handler(CommandHandler("testgif", test_gif))
+    
     application.add_handler(CallbackQueryHandler(main_back, pattern="main_back"))
     application.add_handler(CallbackQueryHandler(games_menu_handler, pattern="games_menu"))
     application.add_handler(CallbackQueryHandler(wallet, pattern="wallet"))
@@ -555,17 +556,22 @@ def main():
     application.add_handler(CallbackQueryHandler(transactions, pattern="transactions"))
     application.add_handler(CallbackQueryHandler(help, pattern="help"))
     application.add_handler(CallbackQueryHandler(daily_bonus, pattern="daily_bonus"))
+    
     application.add_handler(CallbackQueryHandler(roulette, pattern="roulette"))
     application.add_handler(CallbackQueryHandler(roulette_bet, pattern="^bet_"))
     application.add_handler(CallbackQueryHandler(roulette_play, pattern="^roulette_"))
+    
     application.add_handler(CallbackQueryHandler(coinflip, pattern="coinflip"))
     application.add_handler(CallbackQueryHandler(coin_bet, pattern="^coin_bet_"))
     application.add_handler(CallbackQueryHandler(coinflip_play, pattern="^coinflip_"))
+    
     application.add_handler(CallbackQueryHandler(slots, pattern="slots"))
     application.add_handler(CallbackQueryHandler(slot_bet, pattern="^slot_bet_"))
+    
     application.add_handler(CallbackQueryHandler(dice, pattern="dice"))
     application.add_handler(CallbackQueryHandler(dice_bet, pattern="^dice_bet_"))
     application.add_handler(CallbackQueryHandler(dice_play, pattern="^dice_"))
+    
     application.run_polling()
 
 if __name__ == "__main__":
