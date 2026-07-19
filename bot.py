@@ -381,22 +381,32 @@ async def slot_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user[3] < amount:
         await query.answer("Insufficient balance!", show_alert=True)
         return
+    
     emojis = ['🍒', '🍋', '🍊', '🍇', '💎', '7️⃣']
-    result = [random.choice(emojis) for _ in range(3)]
-    if result[0] == result[1] == result[2]:
-        win = amount * 3
-        update_balance(query.from_user.id, win)
-        add_transaction(user[0], 'win', win)
-        text = f"🎉 Jackpot! {result[0]} {result[1]} {result[2]}\n💰 Win: {win} coins (x3)"
-    elif result[0] == result[1] or result[1] == result[2] or result[0] == result[2]:
-        win = int(amount * 1.2)
-        update_balance(query.from_user.id, win)
-        add_transaction(user[0], 'win', win)
-        text = f"🎉 Two match! {result[0]} {result[1]} {result[2]}\n💰 Win: {win} coins (x1.2)"
-    else:
+    
+    # شرط ۵۰۰: سه ایموجی کاملاً متفاوت (هیچ‌کدوم شبیه هم نباشن)
+    if amount == 500:
+        result = random.sample(emojis, 3)
         update_balance(query.from_user.id, -amount)
         add_transaction(user[0], 'loss', -amount)
         text = f"💔 No match! {result[0]} {result[1]} {result[2]}\n💰 Loss: {amount} coins"
+    else:
+        result = [random.choice(emojis) for _ in range(3)]
+        if result[0] == result[1] == result[2]:
+            win = amount * 3
+            update_balance(query.from_user.id, win)
+            add_transaction(user[0], 'win', win)
+            text = f"🎉 Jackpot! {result[0]} {result[1]} {result[2]}\n💰 Win: {win} coins (x3)"
+        elif result[0] == result[1] or result[1] == result[2] or result[0] == result[2]:
+            win = int(amount * 1.2)
+            update_balance(query.from_user.id, win)
+            add_transaction(user[0], 'win', win)
+            text = f"🎉 Two match! {result[0]} {result[1]} {result[2]}\n💰 Win: {win} coins (x1.2)"
+        else:
+            update_balance(query.from_user.id, -amount)
+            add_transaction(user[0], 'loss', -amount)
+            text = f"💔 No match! {result[0]} {result[1]} {result[2]}\n💰 Loss: {amount} coins"
+    
     user = get_user(query.from_user.id)
     text += f"\n\n💳 New balance: {user[3]} coins"
     await query.message.edit_text(
