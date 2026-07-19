@@ -532,7 +532,17 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
+async def test_gif(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        # یه گیف نمونه از خود تلگرام
+        test_gif_id = "CgACAgQAAxkBAAEDCqZqXDO63IWMAAHIPuyy9NICLfrHldgAAsYhAAL8XOFSusWzPwIoXuQ9BA"
+        await update.message.reply_animation(test_gif_id)
+        await update.message.reply_text("✅ گیف با موفقیت ارسال شد!")
+    except Exception as e:
+        await update.message.reply_text(f"❌ خطا: {e}")
+        
 def main():
+    application.add_handler(CommandHandler("testgif", test_gif))
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("addcoin", addcoin))
