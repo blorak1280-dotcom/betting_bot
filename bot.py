@@ -533,10 +533,12 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def test_gif(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def test_gif(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        test_gif_id = "CAACAgQAAxkBA1vI62pcYsRwJkilMTcmP3M_w_5MVhB2AALPIQAC_FzhUm4n7OdWkJsYPQQ"
-        await update.message.reply_animation(test_gif_id)
-        await update.message.reply_text("✅ GIF sent successfully!")
+        # این یک استیکر معروف تلگرام هست که همیشه کار میکنه
+        sticker_id = "CAACAgQAAxkBAAEDCqZqXDO63IWMAAHIPuyy9NICLfrHldgAAsYhAAL8XOFSusWzPwIoXuQ9BA"
+        await update.message.reply_sticker(sticker_id)
+        await update.message.reply_text("✅ Sticker sent!")
     except Exception as e:
         await update.message.reply_text(f"❌ Error: {e}")
         
