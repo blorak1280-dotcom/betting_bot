@@ -7,6 +7,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 
 TOKEN = "8846287029:AAEW5cNt2zWwoMCVRw6HhPyJsOhWGMl6Thc"
 
+# ========== Database ==========
 conn = sqlite3.connect('betting_bot.db', check_same_thread=False)
 cursor = conn.cursor()
 cursor.execute('''
@@ -16,7 +17,10 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT,
     balance INTEGER DEFAULT 10,
     daily_bonus_date TEXT,
-    referral_count INTEGER DEFAULT 0
+    daily_bonus_count INTEGER DEFAULT 0,
+    referral_count INTEGER DEFAULT 0,
+    referred_by INTEGER DEFAULT 0,
+    has_bet INTEGER DEFAULT 0
 )
 ''')
 cursor.execute('''
@@ -49,22 +53,27 @@ def add_transaction(user_id, type, amount):
     conn.commit()
 
 def can_get_daily(telegram_id):
-    cursor.execute('SELECT daily_bonus_date FROM users WHERE telegram_id = ?', (telegram_id,))
+    cursor.execute('SELECT daily_bonus_date, daily_bonus_count FROM users WHERE telegram_id = ?', (telegram_id,))
     row = cursor.fetchone()
-    if row and row[0]:
-        last_date = datetime.fromisoformat(row[0])
-        if datetime.now() - last_date < timedelta(hours=24):
-            remaining = 24 - (datetime.now() - last_date).seconds // 3600
-            return False, remaining
-    return True, 0
+    if row:
+        if row[1] >= 3:
+            return False, 0, "max"
+        if row[0]:
+            last_date = datetime.fromisoformat(row[0])
+            if datetime.now() - last_date < timedelta(hours=24):
+                remaining = 24 - (datetime.now() - last_date).seconds // 3600
+                return False, remaining, "wait"
+    return True, 0, "ok"
 
 def set_daily_date(telegram_id):
-    cursor.execute('UPDATE users SET daily_bonus_date = ? WHERE telegram_id = ?', (datetime.now().isoformat(), telegram_id))
+    cursor.execute('UPDATE users SET daily_bonus_date = ?, daily_bonus_count = daily_bonus_count + 1 WHERE telegram_id = ?',
+                   (datetime.now().isoformat(), telegram_id))
     conn.commit()
 
 def get_referral_link(telegram_id):
     return f"https://t.me/getfreeSkins_bot?start=ref_{telegram_id}"
 
+# ========== Menus ==========
 def main_menu():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🎮 Games", callback_data="games_menu")],
@@ -76,7 +85,7 @@ def main_menu():
 
 def games_menu():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🪙 Coin Flip", callback_data="coinflip")],
+        [InlineKeyboardButton("🪙 Heads or Tails", callback_data="coinflip")],
         [InlineKeyboardButton("🎡 Roulette", callback_data="roulette")],
         [InlineKeyboardButton("🎰 Slots", callback_data="slots")],
         [InlineKeyboardButton("🎲 Dice", callback_data="dice")],
@@ -89,12 +98,7 @@ def roulette_keyboard():
         [InlineKeyboardButton("🟢 Green", callback_data="roulette_green"), InlineKeyboardButton("🔙 Back", callback_data="main_back")]
     ])
 
-def coinflip_keyboard():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🦅 Heads", callback_data="coinflip_heads"), InlineKeyboardButton("⚜️ Tails", callback_data="coinflip_tails")],
-        [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
-    ])
-
+# ========== Start Command ==========
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
     if not user:
@@ -103,10 +107,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if args and args[0].startswith('ref_'):
             referrer_id = int(args[0].split('_')[1])
             referrer = get_user(referrer_id)
-            if referrer:
-                update_balance(referrer_id, 20)
-                add_transaction(referrer[0], 'referral', 20)
-                await context.bot.send_message(referrer_id, f"🎉 New user registered with your link! 20 coins added to your account.")
+            if referrer and referrer[5] < 3:
+                cursor.execute('UPDATE users SET referral_count = referral_count + 1 WHERE telegram_id = ?', (referrer_id,))
+                conn.commit()
+                context.user_data['ref_by'] = referrer_id
     await update.message.reply_text(
         f"💰 Welcome to money poney, {update.effective_user.first_name}!\n\n🎮 Use the menu below to play:",
         reply_markup=main_menu()
@@ -157,7 +161,7 @@ async def referral(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(query.from_user.id)
     link = get_referral_link(query.from_user.id)
     await query.message.edit_text(
-        f"👥 Your referral link:\n{link}\n\nFor each friend who registers with your link and makes their first deposit, you get 20 coins.\n\nTotal referrals: {user[5]}",
+        f"👥 Your referral link:\n{link}\n\nYou can only refer up to 3 people.\nYou get 20 coins after they make their first bet.\n\nTotal referrals: {user[5]}/3",
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="main_back")]])
     )
 
@@ -191,12 +195,32 @@ async def addcoin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     update_balance(5213245493, 999999)
     await update.message.reply_text("✅ 999,999 coins added to your account!")
 
+# ========== Daily Bonus ==========
+async def daily_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    user = get_user(query.from_user.id)
+    allowed, remaining, status = can_get_daily(query.from_user.id)
+    if not allowed:
+        if status == "max":
+            await query.answer("❌ You've already claimed your 3-day bonus!", show_alert=True)
+        else:
+            await query.answer(f"⏳ {remaining} hours remaining!", show_alert=True)
+        return
+    update_balance(query.from_user.id, 7)
+    set_daily_date(query.from_user.id)
+    add_transaction(user[0], 'daily_bonus', 7)
+    await query.message.edit_text(
+        f"🎁 Daily bonus claimed! +7 coins\n💰 New balance: {user[3] + 7} coins",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="main_back")]])
+    )
+
+# ========== Roulette ==========
 async def roulette(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
-        "🎡 Choose your bet amount:",
+        "🎡 Choose your bet:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="bet_10"), InlineKeyboardButton("50", callback_data="bet_50")],
+            [InlineKeyboardButton("10", callback_data="bet_10"), InlineKeyboardButton("20", callback_data="bet_20")],
             [InlineKeyboardButton("100", callback_data="bet_100"), InlineKeyboardButton("500", callback_data="bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
@@ -248,12 +272,13 @@ async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
+# ========== Heads or Tails ==========
 async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
-        "🪙 Choose your bet amount:",
+        "🪙 Choose your bet:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="coin_bet_10"), InlineKeyboardButton("50", callback_data="coin_bet_50")],
+            [InlineKeyboardButton("10", callback_data="coin_bet_10"), InlineKeyboardButton("20", callback_data="coin_bet_20")],
             [InlineKeyboardButton("100", callback_data="coin_bet_100"), InlineKeyboardButton("500", callback_data="coin_bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
@@ -268,8 +293,12 @@ async def coin_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     context.user_data['bet'] = amount
     await query.message.edit_text(
-        f"🪙 Bet: {amount} coins\nChoose:",
-        reply_markup=coinflip_keyboard()
+        f"🪙 Bet: {amount} coins\nChoose Heads or Tails:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Heads", callback_data="coinflip_heads")],
+            [InlineKeyboardButton("Tails", callback_data="coinflip_tails")],
+            [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
+        ])
     )
 
 async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -277,22 +306,55 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     choice = query.data.split('_')[1]
     user = get_user(query.from_user.id)
     bet = context.user_data.get('bet', 10)
+    
     if user[3] < bet:
         await query.answer("Insufficient balance!", show_alert=True)
         return
-    result = random.choice(['heads', 'tails'])
-    result_name = {'heads': 'Heads 🦅', 'tails': 'Tails ⚜️'}
-    if choice == result:
+    
+    # Check if bet is 100 or 500 - guaranteed win
+    is_guaranteed = bet in [100, 500]
+    
+    if is_guaranteed:
+        result = choice  # Always match user's choice
         win = bet * 2
         update_balance(query.from_user.id, win)
         add_transaction(user[0], 'win', win)
-        text = f"🎉 You won! Result: {result_name[result]}\n💰 Win: {win} coins"
+        text = f"🎉 You won! (Guaranteed win for {bet} bet)\n💰 Win: {win} coins"
     else:
-        update_balance(query.from_user.id, -bet)
-        add_transaction(user[0], 'loss', -bet)
-        text = f"💔 You lost! Result: {result_name[result]}\n💰 Loss: {bet} coins"
+        result = random.choice(['heads', 'tails'])
+        if choice == result:
+            win = bet * 2
+            update_balance(query.from_user.id, win)
+            add_transaction(user[0], 'win', win)
+            text = f"🎉 You won! Result: {result}\n💰 Win: {win} coins"
+        else:
+            update_balance(query.from_user.id, -bet)
+            add_transaction(user[0], 'loss', -bet)
+            text = f"💔 You lost! Result: {result}\n💰 Loss: {bet} coins"
+    
+    # Check if user has bet (for referral reward)
+    if user[7] == 0:
+        cursor.execute('UPDATE users SET has_bet = 1 WHERE telegram_id = ?', (query.from_user.id,))
+        conn.commit()
+        # Check if this user was referred
+        ref_by = cursor.execute('SELECT referred_by FROM users WHERE telegram_id = ?', (query.from_user.id,)).fetchone()
+        if ref_by and ref_by[0] > 0:
+            referrer = get_user(ref_by[0])
+            if referrer and referrer[5] < 3:
+                update_balance(ref_by[0], 20)
+                add_transaction(referrer[0], 'referral', 20)
+                await context.bot.send_message(ref_by[0], f"🎉 Your referral made their first bet! +20 coins!")
+    
     user = get_user(query.from_user.id)
     text += f"\n\n💳 New balance: {user[3]} coins"
+    
+    # Send GIF based on result
+    if result == 'heads':
+        gif_id = "AAMCBAADGQEAAQMKpmpcM7rchYwAAcg-7LL00gIt-seV2AACxiEAAvxc4VK6xbM_Aihe5AEAB20AAz0E"
+    else:
+        gif_id = "CgACAgQAAxkBAAEDCqZqXDO63IWMAAHIPuyy9NICLfrHldgAAsYhAAL8XOFSusWzPwIoXuQ9BA"
+    
+    await query.message.reply_animation(gif_id)
     await query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup([
@@ -301,12 +363,13 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
+# ========== Slots ==========
 async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
-        "🎰 Choose your bet amount:",
+        "🎰 Choose your bet:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="slot_bet_10"), InlineKeyboardButton("50", callback_data="slot_bet_50")],
+            [InlineKeyboardButton("10", callback_data="slot_bet_10"), InlineKeyboardButton("20", callback_data="slot_bet_20")],
             [InlineKeyboardButton("100", callback_data="slot_bet_100"), InlineKeyboardButton("500", callback_data="slot_bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
@@ -340,12 +403,13 @@ async def slot_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
+# ========== Dice ==========
 async def dice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
-        "🎲 Choose your bet amount:",
+        "🎲 Choose your bet:",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="dice_bet_10"), InlineKeyboardButton("50", callback_data="dice_bet_50")],
+            [InlineKeyboardButton("10", callback_data="dice_bet_10"), InlineKeyboardButton("20", callback_data="dice_bet_20")],
             [InlineKeyboardButton("100", callback_data="dice_bet_100"), InlineKeyboardButton("500", callback_data="dice_bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
@@ -428,6 +492,7 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
+# ========== Main ==========
 def main():
     application = Application.builder().token(TOKEN).build()
     
@@ -442,6 +507,7 @@ def main():
     application.add_handler(CallbackQueryHandler(referral, pattern="referral"))
     application.add_handler(CallbackQueryHandler(transactions, pattern="transactions"))
     application.add_handler(CallbackQueryHandler(help, pattern="help"))
+    application.add_handler(CallbackQueryHandler(daily_bonus, pattern="daily_bonus"))
     
     application.add_handler(CallbackQueryHandler(roulette, pattern="roulette"))
     application.add_handler(CallbackQueryHandler(roulette_bet, pattern="^bet_"))
