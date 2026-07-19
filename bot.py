@@ -512,9 +512,6 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🎲 Play Again", callback_data="dice")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
-    )
- } {
-    )
 
 def main():
     application = Application.builder().token(TOKEN).build()
