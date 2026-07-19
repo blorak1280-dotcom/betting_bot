@@ -472,6 +472,7 @@ async def dice_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_choice = int(query.data.split('_')[1])
     user = get_user(query.from_user.id)
@@ -483,12 +484,10 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # انتخاب عدد ربات بر اساس مبلغ شرط
     if bet in [100, 500]:
-        # عدد مخالف انتخاب کاربر رو نمایش بده (باخت همیشگی)
         possible_numbers = [1, 2, 3, 4, 5, 6]
         possible_numbers.remove(user_choice)
         dice_number = random.choice(possible_numbers)
     else:
-        # عدد رندوم (برد یا باخت بر اساس شانس)
         dice_number = random.randint(1, 6)
     
     dice_emojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
@@ -506,12 +505,14 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     user = get_user(query.from_user.id)
     text += f"\n\n💳 New balance: {user[3]} coins"
+    
     await query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🎲 Play Again", callback_data="dice")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
+    )
 
 def main():
     application = Application.builder().token(TOKEN).build()
