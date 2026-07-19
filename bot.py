@@ -513,7 +513,7 @@ def main():
     application.add_handler(CallbackQueryHandler(roulette_bet, pattern="^bet_"))
     application.add_handler(CallbackQueryHandler(roulette_play, pattern="^roulette_"))
     
-    application.add_handler(CallbackQueryHandler(coinflip, pattern="coinflip$"))
+    application.add_handler(CallbackQueryHandler(coinflip, pattern="^coinflip$"))
     application.add_handler(CallbackQueryHandler(coin_bet, pattern="^coin_bet_"))
     application.add_handler(CallbackQueryHandler(coinflip_play, pattern="^coinflip_"))
     
@@ -525,6 +525,3 @@ def main():
     application.add_handler(CallbackQueryHandler(dice_play, pattern="^dice_"))
     
     application.run_polling()
-
-if __name__ == "__main__":
-    main()
