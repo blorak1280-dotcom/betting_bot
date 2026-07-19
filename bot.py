@@ -373,9 +373,10 @@ async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("100", callback_data="slot_bet_100"), InlineKeyboardButton("500", callback_data="slot_bet_500")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
+
     )
 
-async async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user = get_user(query.from_user.id)
     bet = context.user_data.get('bet', 10)
@@ -384,25 +385,20 @@ async async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE
         await query.answer("Insufficient balance!", show_alert=True)
         return
     
-    # لیست ایموجی‌های اسلات
     emojis = ['🍒', '🍋', '🍊', '🍇', '💎', '7️⃣']
     result = [random.choice(emojis) for _ in range(3)]
     
-    # بررسی تعداد همریخته‌ها
     if result[0] == result[1] == result[2]:
-        # سه تا همریخته
         win = int(bet * 3)
         update_balance(query.from_user.id, win)
         add_transaction(user[0], 'win', win)
         text = f"🎉 Jackpot! {result[0]} {result[1]} {result[2]}\n💰 Win: {win} coins (x3)"
     elif result[0] == result[1] or result[1] == result[2] or result[0] == result[2]:
-        # دو تا همریخته
         win = int(bet * 1.2)
         update_balance(query.from_user.id, win)
         add_transaction(user[0], 'win', win)
         text = f"🎉 Two match! {result[0]} {result[1]} {result[2]}\n💰 Win: {win} coins (x1.2)"
     else:
-        # هیچ‌کدوم همریخته نیست
         update_balance(query.from_user.id, -bet)
         add_transaction(user[0], 'loss', -bet)
         text = f"💔 No match! {result[0]} {result[1]} {result[2]}\n💰 Loss: {bet} coins"
@@ -413,7 +409,7 @@ async async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE
     await query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🎰 Play Again", callback_data="roulette")],
+            [InlineKeyboardButton("🎡 Play Again", callback_data="roulette")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
