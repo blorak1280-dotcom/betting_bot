@@ -341,12 +341,16 @@ async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(query.from_user.id)
     text += f"\n\n💳 New balance: {user[3]} coins"
     
-    if result == 'heads':
-        gif_id = "AAMCBAADGQEAAQMKpmpcM7rchYwAAcg-7LL00gIt-seV2AACxiEAAvxc4VK6xbM_Aihe5AEAB20AAz0E"
-    else:
-        gif_id = "CgACAgQAAxkBAAEDCqZqXDO63IWMAAHIPuyy9NICLfrHldgAAsYhAAL8XOFSusWzPwIoXuQ9BA"
+    # ارسال گیف با try/except برای جلوگیری از کرش
+    try:
+        if result == 'heads':
+            gif_id = "AAMCBAADGQEAAQMKpmpcM7rchYwAAcg-7LL00gIt-seV2AACxiEAAvxc4VK6xbM_Aihe5AEAB20AAz0E"
+        else:
+            gif_id = "CgACAgQAAxkBAAEDCqZqXDO63IWMAAHIPuyy9NICLfrHldgAAsYhAAL8XOFSusWzPwIoXuQ9BA"
+        await query.message.reply_animation(gif_id)
+    except Exception as e:
+        logging.error(f"GIF send error: {e}")
     
-    await query.message.reply_animation(gif_id)
     await query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup([
@@ -471,8 +475,4 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"💰 Win: {win_amount} coins"
         )
     else:
-        update_balance(query.from_user.id, -bet)
-        add_transaction(user[0], 'loss', -bet)
-        text = (
-            f"🎲 Dice: {dice_emoji} {dice_number}\n\n"
-       
+        update_balance(
