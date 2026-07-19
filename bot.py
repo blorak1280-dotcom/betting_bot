@@ -472,7 +472,6 @@ async def dice_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
-async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_choice = int(query.data.split('_')[1])
     user = get_user(query.from_user.id)
