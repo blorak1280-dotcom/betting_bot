@@ -476,3 +476,4 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     else:
         update_balance(
+        )
