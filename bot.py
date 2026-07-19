@@ -468,7 +468,7 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         win = True
         multiplier = 2.5
     
-    if win:
+     if win:
         win_amount = int(bet * multiplier)
         update_balance(query.from_user.id, win_amount)
         add_transaction(user[0], 'win', win_amount)
@@ -476,4 +476,44 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         update_balance(query.from_user.id, -bet)
         add_transaction(user[0], 'loss', -bet)
-        text = f"🎲 Dice: {dice_emoji} {dice_number}\n\n😔 You lost!\nYour choice didn't match the result.\
+        text = f"🎲 Dice: {dice_emoji} {dice_number}\n\n😔 You lost!\nYour choice didn't match the result.\n\n💸 Loss: {bet} coins\n\n💪 Don't give up! Try again."
+    
+    await query.message.edit_text(
+        text,
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎲 Play Again", callback_data="dice")],
+            [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
+        ])
+    )
+
+def main():
+    application = Application.builder().token(TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("addcoin", addcoin))
+    application.add_handler(CallbackQueryHandler(main_back, pattern="main_back"))
+    application.add_handler(CallbackQueryHandler(games_menu_handler, pattern="games_menu"))
+    application.add_handler(CallbackQueryHandler(wallet, pattern="wallet"))
+    application.add_handler(CallbackQueryHandler(deposit, pattern="deposit"))
+    application.add_handler(CallbackQueryHandler(withdraw, pattern="withdraw"))
+    application.add_handler(CallbackQueryHandler(referral, pattern="referral"))
+    application.add_handler(CallbackQueryHandler(transactions, pattern="transactions"))
+    application.add_handler(CallbackQueryHandler(help, pattern="help"))
+    application.add_handler(CallbackQueryHandler(daily_bonus, pattern="daily_bonus"))
+    application.add_handler(CallbackQueryHandler(roulette, pattern="roulette"))
+    application.add_handler(CallbackQueryHandler(roulette_bet, pattern="^bet_"))
+    application.add_handler(CallbackQueryHandler(roulette_play, pattern="^roulette_"))
+    application.add_handler(CallbackQueryHandler(coinflip, pattern="^coinflip$"))
+    application.add_handler(CallbackQueryHandler(coin_bet, pattern="^coin_bet_"))
+    application.add_handler(CallbackQueryHandler(coinflip_play, pattern="^coinflip_"))
+    application.add_handler(CallbackQueryHandler(slots, pattern="slots"))
+    application.add_handler(CallbackQueryHandler(slot_bet, pattern="^slot_bet_"))
+    application.add_handler(CallbackQueryHandler(dice, pattern="dice"))
+    application.add_handler(CallbackQueryHandler(dice_bet, pattern="^dice_bet_"))
+    application.add_handler(CallbackQueryHandler(dice_play, pattern="^dice_"))
+    application.run_polling()
+
+if __name__ == "__main__":
+    main()
+```
+
+---
