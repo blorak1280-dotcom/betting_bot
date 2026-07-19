@@ -270,97 +270,10 @@ async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
-async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.message.edit_text(
-        "🪙 Choose your bet:",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("10", callback_data="coin_bet_10")],
-            [InlineKeyboardButton("20", callback_data="coin_bet_20")],
-            [InlineKeyboardButton("100", callback_data="coin_bet_100")],
-            [InlineKeyboardButton("500", callback_data="coin_bet_500")],
-            [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
-        ])
-    )
 
-async def coin_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    amount = int(query.data.split('_')[2])
-    user = get_user(query.from_user.id)
-    if user[3] < amount:
-        await query.answer("Insufficient balance!", show_alert=True)
-        return
-    context.user_data['bet'] = amount
-    await query.message.edit_text(
-        f"🪙 Bet: {amount} coins\nChoose Heads or Tails:",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("Heads", callback_data="coinflip_heads")],
-            [InlineKeyboardButton("Tails", callback_data="coinflip_tails")],
-            [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
-        ])
-    )
 
-async def coinflip_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    choice = query.data.split('_')[1]
-    user = get_user(query.from_user.id)
-    bet = context.user_data.get('bet', 10)
-    
-    if user[3] < bet:
-        await query.answer("Insufficient balance!", show_alert=True)
-        return
-    
-    is_guaranteed = bet in [100, 500]
-    
-    if is_guaranteed:
-        result = choice
-        win = bet * 2
-        update_balance(query.from_user.id, win)
-        add_transaction(user[0], 'win', win)
-        text = f"🎉 You won! (Guaranteed win for {bet} bet)\n💰 Win: {win} coins"
-    else:
-        result = random.choice(['heads', 'tails'])
-        if choice == result:
-            win = bet * 2
-            update_balance(query.from_user.id, win)
-            add_transaction(user[0], 'win', win)
-            text = f"🎉 You won! Result: {result}\n💰 Win: {win} coins"
-        else:
-            update_balance(query.from_user.id, -bet)
-            add_transaction(user[0], 'loss', -bet)
-            text = f"💔 You lost! Result: {result}\n💰 Loss: {bet} coins"
-    
-    if user[7] == 0:
-        cursor.execute('UPDATE users SET has_bet = 1 WHERE telegram_id = ?', (query.from_user.id,))
-        conn.commit()
-        ref_by = cursor.execute('SELECT referred_by FROM users WHERE telegram_id = ?', (query.from_user.id,)).fetchone()
-        if ref_by and ref_by[0] > 0:
-            referrer = get_user(ref_by[0])
-            if referrer and referrer[5] < 3:
-                update_balance(ref_by[0], 20)
-                add_transaction(referrer[0], 'referral', 20)
-                await context.bot.send_message(ref_by[0], f"🎉 Your referral made their first bet! +20 coins!")
-    
-    user = get_user(query.from_user.id)
-    text += f"\n\n💳 New balance: {user[3]} coins"
-    
-    try:
-        if result == 'heads':
-            gif_id = "AAMCBAADGQEAAQMKpmpcM7rchYwAAcg-7LL00gIt-seV2AACxiEAAvxc4VK6xbM_Aihe5AEAB20AAz0E"
-        else:
-            gif_id = "CgACAgQAAxkBAAEDCqZqXDO63IWMAAHIPuyy9NICLfrHldgAAsYhAAL8XOFSusWzPwIoXuQ9BA"
-        await query.message.reply_animation(gif_id)
-    except Exception as e:
-        logging.error(f"GIF send error: {e}")
-    
-    await query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🪙 Play Again", callback_data="coinflip")],
-            [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
-        ])
-    )
 
+        
 async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.message.edit_text(
@@ -373,6 +286,8 @@ async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
+
+https://github.com/blorak1280-dotcom/betting_bot/blob/main/bot.py
 
 async def slot_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
