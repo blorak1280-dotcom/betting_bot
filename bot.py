@@ -534,7 +534,7 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def test_gif(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        test_gif_id = "AAMCBAADGQEAAQMKpmpcM7rchYwAAcg-7LL00gIt-seV2AACxiEAAvxc4VK6xbM_Aihe5AEAB20AAz0E"
+        test_gif_id = "CAACAgQAAxkBA1vI62pcYsRwJkilMTcmP3M_w_5MVhB2AALPIQAC_FzhUm4n7OdWkJsYPQQ"
         await update.message.reply_animation(test_gif_id)
         await update.message.reply_text("✅ GIF sent successfully!")
     except Exception as e:
