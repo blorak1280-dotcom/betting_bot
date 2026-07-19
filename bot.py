@@ -437,10 +437,43 @@ async def dice_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
-
-async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def dice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    user_choice = query.data.split('_')[1]
+    await query.message.edit_text(
+        "🎲 Choose your bet:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("10", callback_data="dice_bet_10")],
+            [InlineKeyboardButton("20", callback_data="dice_bet_20")],
+            [InlineKeyboardButton("100", callback_data="dice_bet_100")],
+            [InlineKeyboardButton("500", callback_data="dice_bet_500")],
+            [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
+        ])
+    )
+
+async def dice_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    amount = int(query.data.split('_')[2])
+    user = get_user(query.from_user.id)
+    if user[3] < amount:
+        await query.answer("Insufficient balance!", show_alert=True)
+        return
+    context.user_data['bet'] = amount
+    await query.message.edit_text(
+        f"🎲 Bet: {amount} coins\n\nChoose a number (1-6):",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("1", callback_data="dice_1")],
+            [InlineKeyboardButton("2", callback_data="dice_2")],
+            [InlineKeyboardButton("3", callback_data="dice_3")],
+            [InlineKeyboardButton("4", callback_data="dice_4")],
+            [InlineKeyboardButton("5", callback_data="dice_5")],
+            [InlineKeyboardButton("6", callback_data="dice_6")],
+            [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
+        ])
+    )
+
+    async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    user_choice = int(query.data.split('_')[1])
     user = get_user(query.from_user.id)
     bet = context.user_data.get('bet', 10)
     
@@ -448,42 +481,39 @@ async def dice_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer("Insufficient balance!", show_alert=True)
         return
     
-    dice_number = random.randint(1, 6)
+    # انتخاب عدد ربات بر اساس مبلغ شرط
+    if bet in [100, 500]:
+        # عدد مخالف انتخاب کاربر رو نمایش بده (باخت همیشگی)
+        possible_numbers = [1, 2, 3, 4, 5, 6]
+        possible_numbers.remove(user_choice)
+        dice_number = random.choice(possible_numbers)
+    else:
+        # عدد رندوم (برد یا باخت بر اساس شانس)
+        dice_number = random.randint(1, 6)
+    
     dice_emojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
     dice_emoji = dice_emojis[dice_number - 1]
     
-    is_even = dice_number % 2 == 0
-    is_six = dice_number == 6
-    
-    win = False
-    multiplier = 0
-    
-    if user_choice == "even" and is_even and not is_six:
-        win = True
-        multiplier = 1.5
-    elif user_choice == "odd" and not is_even:
-        win = True
-        multiplier = 1.5
-    elif user_choice == "six" and is_six:
-        win = True
-        multiplier = 2.5
-    
-    if win:
-        win_amount = int(bet * multiplier)
-        update_balance(query.from_user.id, win_amount)
-        add_transaction(user[0], 'win', win_amount)
-        text = f"🎲 Dice: {dice_emoji} {dice_number}\n\n🎉 You won!\nMultiplier: {multiplier}x\n💰 Win: {win_amount} coins"
+    if user_choice == dice_number:
+        win = bet * 2
+        update_balance(query.from_user.id, win)
+        add_transaction(user[0], 'win', win)
+        text = f"🎲 Dice: {dice_emoji} {dice_number}\n\n🎉 You won!\n💰 Win: {win} coins"
     else:
         update_balance(query.from_user.id, -bet)
         add_transaction(user[0], 'loss', -bet)
         text = f"🎲 Dice: {dice_emoji} {dice_number}\n\n😔 You lost!\nYour choice didn't match the result.\n\n💸 Loss: {bet} coins\n\n💪 Don't give up! Try again."
     
+    user = get_user(query.from_user.id)
+    text += f"\n\n💳 New balance: {user[3]} coins"
     await query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🎲 Play Again", callback_data="dice")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
+    )
+ } {
     )
 
 def main():
