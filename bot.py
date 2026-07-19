@@ -193,7 +193,7 @@ async def addcoin(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⛔ Access denied!")
         return
     update_balance(5213245493, 999999)
-    await update.message.reply_text("✅ 999,999 coins added to your account!")
+    await update.message.reply_text("✅ 10000 coins added to your account!")
 
 # ========== Daily Bonus ==========
 async def daily_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -375,30 +375,45 @@ async def slots(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
-async def slot_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async async def roulette_play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    amount = int(query.data.split('_')[2])
     user = get_user(query.from_user.id)
-    if user[3] < amount:
+    bet = context.user_data.get('bet', 10)
+    
+    if user[3] < bet:
         await query.answer("Insufficient balance!", show_alert=True)
         return
+    
+    # لیست ایموجی‌های اسلات
     emojis = ['🍒', '🍋', '🍊', '🍇', '💎', '7️⃣']
     result = [random.choice(emojis) for _ in range(3)]
+    
+    # بررسی تعداد همریخته‌ها
     if result[0] == result[1] == result[2]:
-        win = amount * 3
+        # سه تا همریخته
+        win = int(bet * 3)
         update_balance(query.from_user.id, win)
         add_transaction(user[0], 'win', win)
-        text = f"🎉 You won! {result[0]} {result[1]} {result[2]}\n💰 Win: {win} coins"
+        text = f"🎉 Jackpot! {result[0]} {result[1]} {result[2]}\n💰 Win: {win} coins (x3)"
+    elif result[0] == result[1] or result[1] == result[2] or result[0] == result[2]:
+        # دو تا همریخته
+        win = int(bet * 1.2)
+        update_balance(query.from_user.id, win)
+        add_transaction(user[0], 'win', win)
+        text = f"🎉 Two match! {result[0]} {result[1]} {result[2]}\n💰 Win: {win} coins (x1.2)"
     else:
-        update_balance(query.from_user.id, -amount)
-        add_transaction(user[0], 'loss', -amount)
-        text = f"💔 You lost! {result[0]} {result[1]} {result[2]}\n💰 Loss: {amount} coins"
+        # هیچ‌کدوم همریخته نیست
+        update_balance(query.from_user.id, -bet)
+        add_transaction(user[0], 'loss', -bet)
+        text = f"💔 No match! {result[0]} {result[1]} {result[2]}\n💰 Loss: {bet} coins"
+    
     user = get_user(query.from_user.id)
     text += f"\n\n💳 New balance: {user[3]} coins"
+    
     await query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🎰 Play Again", callback_data="slots")],
+            [InlineKeyboardButton("🎰 Play Again", callback_data="roulette")],
             [InlineKeyboardButton("🔙 Back", callback_data="main_back")]
         ])
     )
